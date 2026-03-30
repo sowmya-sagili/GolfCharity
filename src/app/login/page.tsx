@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { Mail, Lock, AlertCircle } from 'lucide-react'
+import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -20,22 +20,36 @@ export default function Login() {
     setLoading(true)
     setError(null)
 
-    // DEBUG: Log credentials safely in the browser console
     console.log('[Login Attempt]', { email })
 
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password
       })
 
-      if (authError) {
-        console.error('[Login Error]', authError)
-        throw authError
-      }
+      if (authError) throw authError
+      if (!authData.user) throw new Error('No user found after login')
 
-      console.log('[Login Success]', data.user?.id)
-      router.push('/dashboard')
+      // Fetch profile to determine role
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', authData.user.id)
+        .single()
+
+      if (profileError) {
+        console.error('[Profile Fetch Error]', profileError)
+        // Default to dashboard if profile fetch fails but auth succeeded
+        router.push('/dashboard')
+      } else {
+        console.log('[Login Success] Role:', profile.is_admin ? 'Admin' : 'User')
+        if (profile.is_admin) {
+          router.push('/admin')
+        } else {
+          router.push('/dashboard')
+        }
+      }
     } catch (err: any) {
       setError(err.message === 'Invalid login credentials' 
         ? 'Invalid email or password. Please check your credentials.' 
@@ -99,9 +113,14 @@ export default function Login() {
           <button 
             type="submit" 
             disabled={loading}
-            className="btn-primary w-full py-4 text-lg mt-4 disabled:opacity-50"
+            className="btn-primary w-full py-4 text-lg mt-4 disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {loading ? 'Authenticating...' : 'Sign In'}
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Authenticating...
+              </>
+            ) : 'Sign In'}
           </button>
         </form>
 
