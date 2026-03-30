@@ -1,0 +1,2 @@
+﻿src/app/admin/page.tsx(76,36): error TS2353: Object literal may only specify known properties, and 'bg' does not exist in type 'string[] | TargetAndTransition'.
+src/lib/stripe.ts(4,3): error TS2322: Type '"2025-01-27-ac"' is not assignable to type '"2026-03-25.dahlia"'.
