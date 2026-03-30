@@ -1,3 +1,22 @@
+Demo Credentials
+
+You can use the following accounts to test the application:
+
+User Type	Email	Password
+Demo User	demo@golfcharity.com
+	Demo1234
+Demo Admin	admin@golfcharity.com
+	Demo1234
+
+Live Deployment: https://golfcharity-one.vercel.app/
+
+Instructions:
+
+Log in using one of the demo accounts above.
+Demo User will be redirected to the user dashboard.
+Demo Admin will access the admin panel.
+You can test subscription logic, scores, winnings, and charity impact directly.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
