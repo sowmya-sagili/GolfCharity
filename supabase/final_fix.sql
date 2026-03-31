@@ -128,7 +128,9 @@ RETURNS TABLE (
   payment_status TEXT,
   created_at TIMESTAMP WITH TIME ZONE,
   email TEXT,
-  winning_numbers JSONB
+  winning_numbers JSONB,
+  user_scores INTEGER[],
+  user_numbers INTEGER[]
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -138,7 +140,7 @@ BEGIN
   IF (SELECT is_admin()) THEN
     RETURN QUERY
     SELECT 
-      w.id, w.match_type, w.payment_status, w.created_at, p.email, d.winning_numbers
+      w.id, w.match_type, w.payment_status, w.created_at, p.email, d.winning_numbers, w.user_scores, w.user_numbers
     FROM winners w
     JOIN profiles p ON w.user_id = p.id
     JOIN draws d ON w.draw_id = d.id

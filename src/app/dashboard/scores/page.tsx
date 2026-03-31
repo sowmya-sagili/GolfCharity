@@ -116,6 +116,11 @@ export default function ScoresPage() {
 
          if (uploadError) throw uploadError
 
+         // Get Public URL
+         const { data: { publicUrl } } = supabase.storage
+            .from('proofs')
+            .getPublicUrl(filePath)
+
          // 2. Insert score to DB (Using standardized pattern)
          const { error: dbError } = await supabase
             .from('golf_scores')
@@ -123,7 +128,8 @@ export default function ScoresPage() {
                {
                   user_id: user.id,
                   score: scoreVal,
-                  date: date
+                  date: date,
+                  proof_url: publicUrl // Link the uploaded proof
                }
             ])
 

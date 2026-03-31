@@ -96,6 +96,27 @@ export default function WinningsPage() {
                     {win.draws ? new Date(win.draws.draw_date).toLocaleDateString() : 'N/A'}
                   </div>
                   <h3 className="text-xl font-black outfit">{win.match_type}-Match Winner</h3>
+                  
+                  {/* Win details summary */}
+                  <div className="pt-2 space-y-2">
+                    <div className="flex gap-1">
+                       {(win.user_numbers || win.draws?.winning_numbers || [])?.map((n: number, i: number) => {
+                          const isMatch = win.draws?.winning_numbers?.includes(n);
+                          return (
+                             <span key={i} className={`w-5 h-5 rounded flex items-center justify-center text-[8px] font-black border ${
+                                isMatch ? 'bg-accent/20 border-accent text-accent' : 'bg-white/5 border-white/10 text-secondary/40'
+                             }`}>
+                               {n}
+                             </span>
+                          )
+                       })}
+                    </div>
+                    {win.user_scores && win.user_scores.length > 0 && (
+                       <div className="text-[8px] font-medium text-secondary/40 uppercase tracking-widest pl-1">
+                          Round Scores: {win.user_scores.join(', ')}
+                       </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

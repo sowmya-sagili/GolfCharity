@@ -15,6 +15,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 interface DrawRecord {
   id: string
@@ -37,6 +38,7 @@ export default function AdminMonthlyDraws() {
   } | null>(null)
 
   const supabase = createClient()
+  const router = useRouter()
 
   useEffect(() => {
     fetchLastDraw()
@@ -92,14 +94,15 @@ export default function AdminMonthlyDraws() {
     setIsPublishing(true)
 
     try {
-      // 1. Create the draw record first if it doesn't exist or use the current simulation
+      // 1. Create the draw record and mark it 'finished'
+      // This will automatically trigger winner detection via database trigger
       const { data: newDraw, error: drawError } = await supabase
         .from('draws')
         .insert([{
           winning_numbers: drawResult.numbers,
           total_pool: drawResult.pool,
           jackpot_rollover: drawResult.rolloverValue,
-          status: 'simulated',
+          status: 'finished',
           draw_date: new Date().toISOString()
         }])
         .select()
@@ -107,17 +110,10 @@ export default function AdminMonthlyDraws() {
       
       if (drawError) throw drawError
       
-      // 2. Call the RPC to finalize results and identify winners
-      const { error: rpcError } = await supabase.rpc('generate_draw_results', {
-        p_draw_id: newDraw.id,
-        p_winning_numbers: drawResult.numbers
-      })
-
-      if (rpcError) throw rpcError
-      
-      alert("Monthly Draw Published! Winners have been identified and results are live.")
+      // SUCCESS: The database trigger (on_draw_inserted) has already calculated winners.
+      // Redirect to winners payout page to show results.
+      router.push('/admin/winners')
       setDrawResult(null)
-      fetchLastDraw()
     } catch (error: any) {
       alert(`Error publishing draw: ${error.message}`)
     } finally {
@@ -153,7 +149,7 @@ export default function AdminMonthlyDraws() {
             </div>
           </div>
           <div className="flex gap-2">
-            {lastDraw.winning_numbers.map((n, i) => (
+            {lastDraw.winning_numbers?.map((n, i) => (
               <span key={i} className="w-8 h-8 rounded-lg bg-black/40 border border-border flex items-center justify-center text-xs font-black outfit text-accent">
                 {n}
               </span>
@@ -200,7 +196,7 @@ export default function AdminMonthlyDraws() {
                     <div className="space-y-6 text-center">
                        <h3 className="text-xl font-black outfit uppercase tracking-widest text-accent">Draw Result (Generated)</h3>
                        <div className="flex items-center justify-center gap-4">
-                          {drawResult.numbers.map((n, i) => (
+                          {drawResult.numbers?.map((n, i) => (
                              <motion.div 
                                key={i} 
                                initial={{ scale: 0 }}

@@ -21,6 +21,7 @@ interface PendingScore {
   date: string
   status: string
   email: string
+  proof_url?: string
 }
 
 export default function AdminScoreVerification() {
@@ -42,10 +43,10 @@ export default function AdminScoreVerification() {
         {
           event: '*',
           schema: 'public',
-          table: 'golf_scores',
-          filter: 'status=eq.pending'
+          table: 'golf_scores'
         },
-        () => {
+        (payload) => {
+          // If a score was deleted or its status changed away from pending, refresh
           fetchPendingScores()
         }
       )
@@ -71,18 +72,24 @@ export default function AdminScoreVerification() {
   const handleVerify = async (id: string, approve: boolean) => {
     const newStatus = approve ? 'verified' : 'rejected'
     
+    // Optimistic Update: Remove from UI immediately
+    const previousScores = [...scores]
+    setScores(current => current.filter(s => s.id !== id))
+    
     try {
       const { error } = await supabase
         .from('golf_scores')
         .update({ status: newStatus })
         .eq('id', id)
       
-      if (error) throw error
-      
-      // Update local state
-      setScores(scores.filter(s => s.id !== id))
+      if (error) {
+        // Rollback on error
+        setScores(previousScores)
+        throw error
+      }
     } catch (error: any) {
-      alert(`Error updating score: ${error.message}`)
+      console.error('Update Error:', error)
+      alert(`Error updating score: ${error.message || 'Permission denied. Ensure you have run the latest consolidated_sync.sql'}`)
     }
   }
 
@@ -140,14 +147,26 @@ export default function AdminScoreVerification() {
                  className="glass overflow-hidden group border-border hover:border-accent/40 transition-all bg-card-bg/20"
               >
                  {/* Proof Placeholder/Preview */}
-                 <div className="h-48 relative overflow-hidden bg-black/40 flex items-center justify-center">
-                    <Trophy className="w-12 h-12 text-secondary/20" />
+                 <div 
+                   onClick={() => s.proof_url && setViewProof(s.proof_url)}
+                   className={`h-48 relative overflow-hidden bg-black/40 flex items-center justify-center ${s.proof_url ? 'cursor-zoom-in' : ''}`}
+                 >
+                    {s.proof_url ? (
+                      <img src={s.proof_url} alt="Score Proof" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                    ) : (
+                      <Trophy className="w-12 h-12 text-secondary/20" />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
                     
                     <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
                        <div className="text-3xl font-black outfit text-white tracking-tighter shadow-xl">
                           {s.score} <span className="text-xs uppercase tracking-widest font-black text-white/60">Points</span>
                        </div>
+                       {s.proof_url && (
+                         <div className="bg-accent/20 backdrop-blur-md p-2 rounded-lg border border-accent/20">
+                            <ExternalLink className="w-4 h-4 text-accent" />
+                         </div>
+                       )}
                     </div>
                  </div>
 
@@ -190,6 +209,28 @@ export default function AdminScoreVerification() {
           )}
          </AnimatePresence>
       </div>
+
+      {/* Proof Modal Overlay */}
+      <AnimatePresence>
+        {viewProof && (
+           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-8 backdrop-blur-xl">
+              <motion.div 
+                 initial={{ scale: 0.9, opacity: 0 }}
+                 animate={{ scale: 1, opacity: 1 }}
+                 exit={{ scale: 0.9, opacity: 0 }}
+                 className="relative max-w-4xl w-full h-[80vh] bg-black rounded-3xl overflow-hidden border border-border"
+              >
+                 <img src={viewProof} className="w-full h-full object-contain" alt="Full Proof" />
+                 <button 
+                    onClick={() => setViewProof(null)}
+                    className="absolute top-8 right-8 bg-accent text-background px-8 py-3 rounded-xl font-black outfit uppercase tracking-widest hover:bg-white transition-colors"
+                 >
+                    Close Proof
+                 </button>
+              </motion.div>
+           </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

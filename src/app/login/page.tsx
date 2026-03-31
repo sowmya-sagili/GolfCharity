@@ -23,6 +23,11 @@ export default function Login() {
     console.log('[Login Attempt]', { email })
 
     try {
+      // PROACTIVELY CLEAR STALE SESSION
+      // This prevents "Invalid Refresh Token" loops by ensuring the client
+      // starts from a clean slate before attempting a new login.
+      await supabase.auth.signOut()
+
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password

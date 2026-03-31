@@ -17,11 +17,14 @@ import { createClient } from '@/lib/supabase'
 interface Winner {
   id: string
   match_type: number
+  amount_won: number
   proof_url: string
   payment_status: string
   created_at: string
   email: string
   winning_numbers: number[]
+  user_scores?: number[]
+  user_numbers?: number[]
 }
 
 export default function AdminWinners() {
@@ -168,17 +171,29 @@ export default function AdminWinners() {
                                {w.match_type}-Match
                             </div>
                          </td>
-                         <td className="px-6 py-6">
-                            <div className="flex gap-1">
-                               {w.winning_numbers?.map((n) => (
-                                 <span key={n} className="w-6 h-6 rounded bg-black/40 border border-border flex items-center justify-center text-[10px] font-black text-accent">
-                                   {n}
-                                 </span>
-                               ))}
-                            </div>
-                         </td>
+                          <td className="px-6 py-6">
+                             <div className="flex flex-col gap-2">
+                                <div className="flex gap-1">
+                                   {(w.user_numbers || w.winning_numbers || [])?.map((n, i) => {
+                                      const isMatch = w.winning_numbers?.includes(n);
+                                      return (
+                                         <span key={i} className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-black border ${
+                                            isMatch ? 'bg-accent/20 border-accent text-accent' : 'bg-black/40 border-border text-secondary/60'
+                                         }`}>
+                                           {n}
+                                         </span>
+                                      )
+                                   })}
+                                </div>
+                                {w.user_scores && w.user_scores.length > 0 && (
+                                   <div className="text-[9px] font-medium text-secondary/40 uppercase tracking-widest pl-1">
+                                      Raw: {w.user_scores.join(', ')}
+                                   </div>
+                                )}
+                             </div>
+                          </td>
                          <td className="px-6 py-6 font-black text-accent text-sm">
-                            £{getTierAmount(w.match_type).toLocaleString()}
+                            £{w.amount_won ? w.amount_won.toLocaleString() : (getTierAmount(w.match_type).toLocaleString())}
                          </td>
                          <td className="px-6 py-6">
                             <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${

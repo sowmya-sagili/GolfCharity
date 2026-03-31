@@ -122,8 +122,7 @@ export default function DashboardOverview() {
         const { data, error } = await supabase
           .from('winners')
           .select('match_type, payment_status')
-          .eq('user_id', userId)
-          .eq('payment_status', 'paid');
+          .eq('user_id', userId);
         if (error) throw error;
         winningData = data;
       }
